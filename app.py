@@ -162,70 +162,71 @@ def get_quota(profile: gr.OAuthProfile | None = None):
 
 with gr.Blocks() as app:
 
-    with gr.Tab("🏆 Public Leaderboard"):
-        leaderboard_heading_md = gr.Markdown(
-            "TODO: Introduction to the benchmark and leaderboard"
-        )
-        leaderboard_table = gr.Dataframe(get_leaderboard())
-        leaderboard_footer_md = gr.Markdown(
-            "TODO: Add instructions for the leaderboard, e.g. how to submit, evaluation criteria, etc."
-        )
+    if SHOW_LEADERBOARD:
+        with gr.Tab("🏆 Public Leaderboard"):
+            leaderboard_heading_md = gr.Markdown(
+                "TODO: Introduction to the benchmark and leaderboard"
+            )
+            leaderboard_table = gr.Dataframe(get_leaderboard())
+            leaderboard_footer_md = gr.Markdown(
+                "TODO: Add instructions for the leaderboard, e.g. how to submit, evaluation criteria, etc."
+            )
+    if SHOW_EVAL_SERVER:
+        with gr.Tab("🚀 Evaluation"):
+            login_button = gr.LoginButton()
+            welcome_md = gr.Markdown("🔒 Please sign in to submit.")
+            welcome_details_md = gr.Markdown(
+                "TODO: add instructions for submission format and evaluation criteria.",
+                visible=False,
+            )
+            submission_file = gr.File(
+                label="Prediction (.json)", visible=False, file_types=[".json"]
+            )
+            submission_id = gr.Textbox(
+                label="(Optional) Submission identifier", visible=False
+            )
+            clean_flag = gr.Checkbox(
+                label="Attempt to clean my submission (Recommended for raw responses)",
+                value=True,
+                visible=False,
+            )
+            private_flag = gr.Checkbox(
+                label="Do not save my submission", value=False, visible=False
+            )
+            quota_details = gr.Markdown(visible=False)
+            submit_btn = gr.Button("Submit", visible=False)
+            result = gr.Textbox(label="✅ Submission processed", visible=False)
 
-    with gr.Tab("🚀 Evaluation"):
-        login_button = gr.LoginButton()
-        welcome_md = gr.Markdown("🔒 Please sign in to submit.")
-        welcome_details_md = gr.Markdown(
-            "TODO: add instructions for submission format and evaluation criteria.",
-            visible=False,
-        )
-        submission_file = gr.File(
-            label="Prediction (.json)", visible=False, file_types=[".json"]
-        )
-        submission_id = gr.Textbox(
-            label="(Optional) Submission identifier", visible=False
-        )
-        clean_flag = gr.Checkbox(
-            label="Attempt to clean my submission (Recommended for raw responses)",
-            value=True,
-            visible=False,
-        )
-        private_flag = gr.Checkbox(
-            label="Do not save my submission", value=False, visible=False
-        )
-        quota_details = gr.Markdown(visible=False)
-        submit_btn = gr.Button("Submit", visible=False)
-        result = gr.Textbox(label="✅ Submission processed", visible=False)
+            # Load login state → show/hide components
+            app.load(
+                fn=login_check,
+                inputs=[],
+                outputs=[
+                    welcome_md,
+                    welcome_details_md,
+                    quota_details,
+                    submission_id,
+                    submission_file,
+                    clean_flag,
+                    private_flag,
+                    submit_btn,
+                ],
+            )
+
+            futures = submit_btn.click(
+                fn=submit,
+                inputs=[submission_id, submission_file, clean_flag, private_flag],
+                outputs=[result],
+            ).then(quoata_check, outputs=[quota_details])
+
+            if SHOW_LEADERBOARD:
+                futures.then(
+                    get_leaderboard,
+                    outputs=[leaderboard_table],
+                )
 
     copyright = gr.Markdown(
         "Based on the [gradio-eval-server-template](https://github.com/paulgavrikov/gradio-eval-server-template) by Paul Gavrikov."
-    )
-
-    # Load login state → show/hide components
-    app.load(
-        fn=login_check,
-        inputs=[],
-        outputs=[
-            welcome_md,
-            welcome_details_md,
-            quota_details,
-            submission_id,
-            submission_file,
-            clean_flag,
-            private_flag,
-            submit_btn,
-        ],
-    )
-
-    # Submit button only shown post-login
-    submit_btn.click(
-        fn=submit,
-        inputs=[submission_id, submission_file, clean_flag, private_flag],
-        outputs=[result],
-    ).then(
-        get_leaderboard,
-        outputs=[leaderboard_table],
-    ).then(
-        quoata_check, outputs=[quota_details]
     )
 
 

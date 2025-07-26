@@ -12,3 +12,7 @@ MAX_SUBMISSIONS_PER_USER_PER_DAY = 10
 SAVE_SUBMISSIONS = True
 # Save submissions
 SAVE_SUBMISSION_PREDICTIONS = True
+# Show leaderboard interface
+SHOW_LEADERBOARD = True
+# Show evaluation server interface
+SHOW_EVAL_SERVER = True
